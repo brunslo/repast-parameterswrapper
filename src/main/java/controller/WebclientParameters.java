@@ -2,28 +2,62 @@ package controller;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 import repast.simphony.parameter.Parameters;
 import repast.simphony.parameter.Schema;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.w3c.dom.Node;
+import org.w3c.dom.NamedNodeMap;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
 
 
 public final class WebclientParameters implements Parameters {
-	private static final String ENDPOINT_PREFIX = "http://localhost:8080/among-model";
 
 	// TODO: Temporary for testing. This should be a list of a new objects that
 	// fully maps each parameters metadata
-	private final Map<String, Object> parameterMap = new HashMap<>();
+	private final static Map<String, Object> parameterMap = new HashMap<>();
 
-	public static WebclientParameters create() {
+	public static  WebclientParameters transmitParam(String endPoint)  {
+		final Map<String, Object>  initialParameters = new HashMap<>();
+		try {
+			populateParameters();
+
+			String objectString = convertObjectAsString(parameterMap);
+			HttpResponse<JsonNode> response = Unirest.post(endPoint)
+					.header("Accept", "application/json")
+					.header("Content-Type", "application/json")
+					.body(objectString)
+					.asJson();
+
+//			    System.out.println("statusCode = " + response.getStatus());
+
+		} catch (UnirestException | IOException e ) {
+			e.printStackTrace();
+		}
+
+		return new WebclientParameters(initialParameters);
+
+	}
+
+	public static WebclientParameters receiveParam(String endPoint)  {
 		final Map<String, Object> initialParameters = new HashMap<>();
 
 		try {
-			final String responseString = Unirest.get(ENDPOINT_PREFIX + "/getInitialParam").asString().getBody();
+			final String responseString = Unirest.get(endPoint).asString().getBody();
 
 			final Map<String, Object> responseMap = JSON.std.mapFrom(responseString);
 
@@ -37,10 +71,57 @@ public final class WebclientParameters implements Parameters {
 		return new WebclientParameters(initialParameters);
 	}
 
+	public static String convertObjectAsString(Map<String,Object> obj) throws IOException {
+		return JSON.std.asString(obj);
+	}
+
 	private WebclientParameters(final Map<String, Object> initialParameters) {
+
 		parameterMap.putAll(initialParameters);
 	}
 
+	private static void populateParameters() {
+		//  Read Parameters from XML file
+
+		try {
+			DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+			Document doc = docBuilder.parse(new File("./among.rs/parameters.xml"));
+			doc.getDocumentElement().normalize();
+//            System.out.println("Root element of the doc is " + doc.getDocumentElement().getNodeName());
+			NodeList listOfParameters = doc.getElementsByTagName("parameter");
+			int totalParameters = listOfParameters.getLength();
+//            System.out.println("Total no of parameters : " + totalParameters);
+			Map<String,Object> allParams = new HashMap();
+			String mainParam="";
+			for (int s = 0; s < listOfParameters.getLength(); s++) {
+				Node firstParamNode = listOfParameters.item(s);
+				NamedNodeMap attributes = firstParamNode.getAttributes();
+				HashMap<String, String> params = new HashMap<String, String>();
+				for (int t = 0; t < attributes.getLength(); t++) {
+					Node theAttribute = attributes.item(t);
+					params.put(theAttribute.getNodeName(), theAttribute.getNodeValue());
+					if(theAttribute.getNodeName() == "name") {
+						mainParam=theAttribute.getNodeValue();
+					}
+				}
+				allParams.put(mainParam,params);
+
+				parameterMap.putAll(allParams);
+			}
+		} catch (
+				SAXParseException err) {
+			System.out.println("** Parsing error" + ", line " + err.getLineNumber() + ", uri " + err.getSystemId());
+			System.out.println(" " + err.getMessage());
+		} catch (
+				SAXException e) {
+			Exception x = e.getException();
+			((x == null) ? e : x).printStackTrace();
+		} catch (Throwable t) {
+			t.printStackTrace();
+		}
+
+	}
 	@Override
 	public void addPropertyChangeListener(PropertyChangeListener listener) {
 		// TODO Auto-generated method stub
@@ -136,59 +217,5 @@ public final class WebclientParameters implements Parameters {
 	public void graphStuff() {
 		// I'M A STUB!
 	}
-}
-//
-// static final Object NULL = new Object();
-//
-// static final Map<String, String> paramMap = new HashMap<String, String>();
 
-//
-// public static Object getParameterValue(Parameters PObj, String paramName) {
-//
-// return PObj.getValue(paramName);
-// }
-//
-// public static Map<String, String> createParamMap(Parameters pObj) {
-//
-// paramMap.put(pObj.getDisplayName("shockSupply"),
-// pObj.getValue("shockSupply").toString());
-// paramMap.put(pObj.getDisplayName("policyShock"),
-// pObj.getValue("policyShock").toString());
-// paramMap.put(pObj.getDisplayName("CGTMagnitude"),
-// pObj.getValue("CGTMagnitude").toString());
-// paramMap.put(pObj.getDisplayName("NGMagnitude"),
-// pObj.getValue("NGMagnitude").toString());
-// paramMap.put(pObj.getDisplayName("demandMagnitude"),
-// pObj.getValue("demandMagnitude").toString());
-// paramMap.put(pObj.getDisplayName("supplyMagnitude"),
-// pObj.getValue("supplyMagnitude").toString());
-// paramMap.put(pObj.getDisplayName("csv"), pObj.getValue("csv").toString());
-// paramMap.put(pObj.getDisplayName("run"), pObj.getValue("run").toString());
-// paramMap.put(pObj.getDisplayName("households"),
-// pObj.getValue("households").toString());
-//
-// paramMap.put(pObj.getDisplayName("aggregate"),
-// pObj.getValue("aggregate").toString());
-// paramMap.put(pObj.getDisplayName("randomSeed"),
-// pObj.getValue("randomSeed").toString());
-// paramMap.put(pObj.getDisplayName("cgt"), pObj.getValue("cgt").toString());
-// paramMap.put(pObj.getDisplayName("shockDemand"),
-// pObj.getValue("shockDemand").toString());
-// paramMap.put(pObj.getDisplayName("incomeMagnitude"),
-// pObj.getValue("incomeMagnitude").toString());
-// paramMap.put(pObj.getDisplayName("shockIncome"),
-// pObj.getValue("shockIncome").toString());
-// paramMap.put(pObj.getDisplayName("ng"), pObj.getValue("ng").toString());
-//
-// return paramMap;
-// }
-//
-// public static void sendParameterMap(Parameters pObj) throws Exception {
-// Map<String,String> paramsMap= createParamMap(pObj);
-// webclientObj.postMethod("http://localhost:8080/among-model/sendParamFromEclipse",
-// paramsMap);
-//
-// }
-//
-//// HashMap getAllParameters(String paramName);
-//
+}
