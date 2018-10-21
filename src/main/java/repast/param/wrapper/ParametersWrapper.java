@@ -1,4 +1,4 @@
-package controller;
+package repast.param.wrapper;
 
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.parameter.Parameters;

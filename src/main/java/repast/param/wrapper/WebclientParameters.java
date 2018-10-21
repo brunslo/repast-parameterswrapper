@@ -1,4 +1,4 @@
-package controller;
+package repast.param.wrapper;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
