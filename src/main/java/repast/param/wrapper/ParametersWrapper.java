@@ -100,7 +100,7 @@ public final class ParametersWrapper {
         val parameters = getRuntimeParameters();
 
         if (useWebParameters()) {
-            if (lastPollingDone.plus(Duration.ofMillis(pollingInterval())).isAfter(LocalDateTime.now())) {
+            if (LocalDateTime.now().isAfter(lastPollingDone.plus(Duration.ofMillis(pollingInterval())))) {
                 try {
                     Unirest.get(url() + "/parameters")
                             .asStringAsync(new Callback<String>() {
