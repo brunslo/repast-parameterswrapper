@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -29,7 +29,6 @@
             <version>2.5.0</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/repast.simphony.bin_and_src.jar</systemPath>
-
         </dependency>
 
         <dependency>
@@ -41,6 +40,18 @@
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -69,12 +80,7 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <finalName>RepastParamWrapper-${artifactId}-${version}</finalName>
-                </configuration>
             </plugin>
         </plugins>
     </build>
-
-
 </project>
