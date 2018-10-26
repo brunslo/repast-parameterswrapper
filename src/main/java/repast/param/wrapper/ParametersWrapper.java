@@ -69,29 +69,29 @@ public final class ParametersWrapper {
                 }
                 val jsonString = stringComposer.end().finish().trim();
 
-                Unirest.post(url() + "/initialise")
+                Unirest.post(url() + "/initialise-parameter")
                         .header("Content-Type", "application/json")
                         .body(jsonString)
                         .asStringAsync(new Callback<String>() {
                             @Override
                             public void completed(HttpResponse<String> response) {
                                 if (response.getStatus() != 200) {
-                                    log("Call to /initialise did not return 200: " + response);
+                                    log("Call to /initialise-parameter did not return 200: " + response);
                                 }
                             }
 
                             @Override
                             public void failed(UnirestException ex) {
-                                log("Call to /initialise failed: " + ex.getLocalizedMessage());
+                                log("Call to /initialise-parameter failed: " + ex.getLocalizedMessage());
                             }
 
                             @Override
                             public void cancelled() {
-                                log("Call to /initialise cancelled");
+                                log("Call to /initialise-parameter cancelled");
                             }
                         });
             } catch (Exception ex) {
-                log("Call to /initialise raised unexpected exception: " + ex.getLocalizedMessage());
+                log("Call to /initialise-parameter raised unexpected exception: " + ex.getLocalizedMessage());
             }
         }
     }
