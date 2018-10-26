@@ -58,7 +58,7 @@ public final class ParametersWrapper {
         return getRuntimeParameters();
     }
 
-    private void initialiseWebParameters() {
+    public void initialiseWebParameters() {
         if (useWebParameters()) {
             val parameters = getRuntimeParameters();
 
