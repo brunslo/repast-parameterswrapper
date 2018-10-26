@@ -72,8 +72,26 @@ public final class ParametersWrapper {
                 Unirest.post(url() + "/initialise")
                         .header("Content-Type", "application/json")
                         .body(jsonString)
-                        .asStringAsync();
-            } catch (Exception ignored) {
+                        .asStringAsync(new Callback<String>() {
+                            @Override
+                            public void completed(HttpResponse<String> response) {
+                                if (response.getStatus() != 200) {
+                                    log("Call to /initialise did not return 200: " + response);
+                                }
+                            }
+
+                            @Override
+                            public void failed(UnirestException ex) {
+                                log("Call to /initialise failed: " + ex.getLocalizedMessage());
+                            }
+
+                            @Override
+                            public void cancelled() {
+                                log("Call to /initialise cancelled");
+                            }
+                        });
+            } catch (Exception ex) {
+                log("Call to /initialise raised unexpected exception: " + ex.getLocalizedMessage());
             }
         }
     }
@@ -107,20 +125,26 @@ public final class ParametersWrapper {
                                                     parameters.setValue(name, value);
                                                 }
                                             });
-                                        } catch (Exception ignored) {
+                                        } catch (Exception ex) {
+                                            log("Error parsing /parameters response: " + ex.getLocalizedMessage());
                                         }
+                                    } else {
+                                        log("Call to /parameters did not return 200: " + response);
                                     }
                                 }
 
                                 @Override
-                                public void failed(UnirestException ignored) {
+                                public void failed(UnirestException ex) {
+                                    log("Call to /parameters failed: " + ex.getLocalizedMessage());
                                 }
 
                                 @Override
                                 public void cancelled() {
+                                    log("Call to /parameters cancelled");
                                 }
                             });
-                } catch (Exception ignored) {
+                } catch (Exception ex) {
+                    log("Call to /parameters raised unexpected exception: " + ex.getLocalizedMessage());
                 }
 
                 lastPollingDone = LocalDateTime.now();
@@ -136,11 +160,34 @@ public final class ParametersWrapper {
             val valueWasUpdated = !event.getNewValue().equals(event.getOldValue());
 
             if (parameterExists && valueWasUpdated) {
+                val name = event.getPropertyName();
+                val value = parameters.getValueAsString(event.getPropertyName());
+
                 Unirest.post(url() + "/set-parameter")
                         .header("Content-Type", "application/x-www-form-urlencoded")
-                        .field("name", event.getPropertyName())
-                        .field("value", parameters.getValueAsString(event.getPropertyName()))
-                        .asStringAsync();
+                        .field("name", name)
+                        .field("value", value)
+                        .asStringAsync(new Callback<String>() {
+                            @Override
+                            public void completed(HttpResponse<String> response) {
+                                if (response.getStatus() != 200) {
+                                    log(String.format(
+                                            "Call to /set-parameter with name='%s' and value='%s' did not return 200: %s",
+                                            name, value, response
+                                    ));
+                                }
+                            }
+
+                            @Override
+                            public void failed(UnirestException ex) {
+                                log("Call to /set-parameter failed: " + ex.getLocalizedMessage());
+                            }
+
+                            @Override
+                            public void cancelled() {
+                                log("Call to /set-parameter cancelled");
+                            }
+                        });
             }
         }
     }
@@ -176,5 +223,11 @@ public final class ParametersWrapper {
 
     private Parameters getRuntimeParameters() {
         return RunEnvironment.getInstance().getParameters();
+    }
+
+    private void log(@NonNull final String message) {
+        System.out.println(String.format("%s: %s",
+                ParametersWrapper.class.getSimpleName(), message
+        ));
     }
 }
