@@ -26,7 +26,7 @@ public final class ParametersWrapper {
 
     private static final String DEFAULT_URL = "http://localhost:8080";
 
-    private static final int DEFAULT_POLLING_INTERVAL = 5000;
+    private static final int DEFAULT_POLLING_INTERVAL = 1000;
 
     private static ParametersWrapper instance;
 
