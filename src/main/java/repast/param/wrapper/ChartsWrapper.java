@@ -7,20 +7,14 @@ import com.mashape.unirest.http.async.Callback;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.NonNull;
 import lombok.val;
-import repast.simphony.engine.environment.RunEnvironment;
-import repast.simphony.parameter.Parameters;
-import java.util.Iterator;
+
+import java.util.List;
 import java.util.Map;
 
+import static repast.param.wrapper.util.RuntimeParametersUtils.url;
+import static repast.param.wrapper.util.RuntimeParametersUtils.useWebParameters;
+
 public class ChartsWrapper {
-    private static final String USE_WEB_PARAMETERS_PARAMETER_NAME = "webService_useWebParameters";
-
-    private static final String URL_PARAMETER_NAME = "webService_url";
-
-    private static final boolean DEFAULT_USE_WEB_PARAMETERS = false;
-
-    private static final String DEFAULT_URL = "http://localhost:8080";
-
     private static ChartsWrapper instance;
 
     private ChartsWrapper() {
@@ -29,121 +23,105 @@ public class ChartsWrapper {
     public static ChartsWrapper getInstance() {
         if (instance == null) {
             instance = ChartsWrapper.create();
-            }
+        }
+
         return instance;
     }
 
     private static ChartsWrapper create() {
-        val ChartsWrapper = new ChartsWrapper();
-        ChartsWrapper.initialiseWebCharts();
-        return ChartsWrapper;
-    }
-    private static boolean useWebParameters() {
-        val parameters = getRuntimeParameters();
+        val chartsWrapper = new ChartsWrapper();
 
-        val isValid = parameters.getSchema().contains(USE_WEB_PARAMETERS_PARAMETER_NAME) &&
-                (parameters.getSchema().getDetails(USE_WEB_PARAMETERS_PARAMETER_NAME).getType().equals(Boolean.class) ||
-                        parameters.getSchema().getDetails(USE_WEB_PARAMETERS_PARAMETER_NAME).getType().equals(boolean.class));
+        chartsWrapper.initialise();
 
-        return isValid ? parameters.getBoolean(USE_WEB_PARAMETERS_PARAMETER_NAME) : DEFAULT_USE_WEB_PARAMETERS;
+        return chartsWrapper;
     }
 
-    private static String url() {
-        val parameters = getRuntimeParameters();
+    public void initialise() {
+        if (useWebParameters()) {
+            Unirest.post(url() + "/charts/initialise")
+                    .header("Content-Type", "application/json")
+                    .asStringAsync(new Callback<String>() {
+                        @Override
+                        public void completed(HttpResponse<String> response) {
+                            if (response.getStatus() != 200) {
+                                log("Call to POST /charts/initialise did not return 200: " + response);
+                            }
+                        }
 
-        val isValid = parameters.getSchema().contains(URL_PARAMETER_NAME) &&
-                parameters.getSchema().getDetails(URL_PARAMETER_NAME).getType().equals(String.class);
+                        @Override
+                        public void failed(UnirestException ex) {
+                            log("Call to POST /charts/initialise failed: " + ex.getLocalizedMessage());
+                        }
 
-        return isValid ? parameters.getString(URL_PARAMETER_NAME) : DEFAULT_URL;
-    }
-
-    private static Parameters getRuntimeParameters() {
-
-        return RunEnvironment.getInstance().getParameters();
-    }
-
-    public void sendChartData(Map<String,String> chartMap) {
-
-        if(useWebParameters())
-        {
-            try {
-                    val stringComposer = JSON.std.composeString().startObject();
-                    Iterator it = chartMap.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        stringComposer.put(pair.getKey().toString(), pair.getValue().toString());
-                        it.remove();
-                    }
-
-                    val jsonString = stringComposer.end().finish().trim();
-
-                    Unirest.post(url() + "/charts")
-                            .header("Content-Type", "application/json")
-                            .body(jsonString)
-                            .asStringAsync(new Callback<String>() {
-                                @Override
-                                public void completed(HttpResponse<String> response) {
-                                    if (response.getStatus() != 200) {
-                                        log("Call to /charts did not return 200: " + response);
-                                    }
-                                }
-
-                                @Override
-                                public void failed(UnirestException ex) {
-                                    log("Call to /charts failed: " + ex.getLocalizedMessage());
-                                }
-
-                                @Override
-                                public void cancelled() {
-                                    log("Call to /charts cancelled");
-                                }
-                            });
-
-                } catch(Exception ignored){
-                }
+                        @Override
+                        public void cancelled() {
+                            log("Call to POST /charts/initialise cancelled");
+                        }
+                    });
         }
     }
 
-
-    public void initialiseWebCharts() {
+    public void publishCharts(@NonNull final List<Map<String, String>> charts) {
         if (useWebParameters()) {
-
             try {
-//                val stringComposer = JSON.std.composeString().startObject();
-//                val jsonString = stringComposer.end().finish().trim();
-
-                Unirest.post(url() + "/initialise-chart")
+                Unirest.post(url() + "/charts")
                         .header("Content-Type", "application/json")
-//                        .body(jsonString)
+                        .body(JSON.std.asString(charts))
                         .asStringAsync(new Callback<String>() {
                             @Override
                             public void completed(HttpResponse<String> response) {
                                 if (response.getStatus() != 200) {
-                                    log("Call to /initialise-chart chart did not return 200: " + response);
+                                    log("Call to POST /charts did not return 200: " + response);
                                 }
                             }
 
                             @Override
                             public void failed(UnirestException ex) {
-                                log("Call to /initialise-chart chart failed: " + ex.getLocalizedMessage());
+                                log("Call to POST /charts failed: " + ex.getLocalizedMessage());
                             }
 
                             @Override
                             public void cancelled() {
-                                log("Call to /initialise-chart chart cancelled");
+                                log("Call to POST /charts cancelled");
                             }
                         });
             } catch (Exception ex) {
-                log("Call to /initialise-chart raised unexpected exception: " + ex.getLocalizedMessage());
+                log("Call to POST /charts raised unexpected exception: " + ex.getLocalizedMessage());
+            }
+        }
+    }
+
+    public void publishSingleChartMap(Map<String, String> chartMap) {
+        if (useWebParameters()) {
+            try {
+                Unirest.put(url() + "/charts")
+                        .header("Content-Type", "application/json")
+                        .body(JSON.std.asString(chartMap))
+                        .asStringAsync(new Callback<String>() {
+                            @Override
+                            public void completed(HttpResponse<String> response) {
+                                if (response.getStatus() != 200) {
+                                    log("Call to PUT /charts did not return 200: " + response);
+                                }
+                            }
+
+                            @Override
+                            public void failed(UnirestException ex) {
+                                log("Call to PUT /charts failed: " + ex.getLocalizedMessage());
+                            }
+
+                            @Override
+                            public void cancelled() {
+                                log("Call to PUT /charts cancelled");
+                            }
+                        });
+            } catch (Exception ex) {
+                log("Call to PUT /charts raised unexpected exception: " + ex.getLocalizedMessage());
             }
         }
     }
 
     private void log(@NonNull final String message) {
-        System.out.println(String.format("%s: %s",
-                ParametersWrapper.class.getSimpleName(), message
-        ));
+        System.out.println(String.format("%s: %s", ChartsWrapper.class.getSimpleName(), message));
     }
-
-
 }
