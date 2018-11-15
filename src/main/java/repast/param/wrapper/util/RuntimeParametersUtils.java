@@ -1,26 +1,25 @@
 package repast.param.wrapper.util;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
 import lombok.val;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.parameter.Parameters;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class RuntimeParametersUtils {
-    private static final String USE_WEB_PARAMETERS_PARAMETER_NAME = "webService_useWebParameters";
+@UtilityClass
+public class RuntimeParametersUtils {
+    private final String USE_WEB_PARAMETERS_PARAMETER_NAME = "webService_useWebParameters";
 
-    private static final String URL_PARAMETER_NAME = "webService_url";
+    private final String URL_PARAMETER_NAME = "webService_url";
 
-    private static final String POLLING_INTERVAL_PARAMETER_NAME = "webService_pollingInterval";
+    private final String POLLING_INTERVAL_PARAMETER_NAME = "webService_pollingInterval";
 
-    private static final boolean DEFAULT_USE_WEB_PARAMETERS = false;
+    private final boolean DEFAULT_USE_WEB_PARAMETERS = false;
 
-    private static final String DEFAULT_URL = "http://localhost:8080";
+    private final String DEFAULT_URL = "http://localhost:8080";
 
-    private static final int DEFAULT_POLLING_INTERVAL = 1000;
+    private final int DEFAULT_POLLING_INTERVAL = 1000;
 
-    public static boolean useWebParameters() {
+    public boolean useWebParameters() {
         val parameters = getRuntimeParameters();
 
         val isValid = parameters.getSchema().contains(USE_WEB_PARAMETERS_PARAMETER_NAME) &&
@@ -30,7 +29,7 @@ public final class RuntimeParametersUtils {
         return isValid ? parameters.getBoolean(USE_WEB_PARAMETERS_PARAMETER_NAME) : DEFAULT_USE_WEB_PARAMETERS;
     }
 
-    public static String url() {
+    public String url() {
         val parameters = getRuntimeParameters();
 
         val isValid = parameters.getSchema().contains(URL_PARAMETER_NAME) &&
@@ -39,7 +38,7 @@ public final class RuntimeParametersUtils {
         return isValid ? parameters.getString(URL_PARAMETER_NAME) : DEFAULT_URL;
     }
 
-    public static int pollingInterval() {
+    public int pollingInterval() {
         val parameters = getRuntimeParameters();
 
         val isValid = parameters.getSchema().contains(POLLING_INTERVAL_PARAMETER_NAME) &&
@@ -49,7 +48,7 @@ public final class RuntimeParametersUtils {
         return isValid ? parameters.getInteger(POLLING_INTERVAL_PARAMETER_NAME) : DEFAULT_POLLING_INTERVAL;
     }
 
-    public static Parameters getRuntimeParameters() {
+    public Parameters getRuntimeParameters() {
         return RunEnvironment.getInstance().getParameters();
     }
 }

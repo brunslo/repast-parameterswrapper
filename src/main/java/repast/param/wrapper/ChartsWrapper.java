@@ -7,12 +7,11 @@ import com.mashape.unirest.http.async.Callback;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.NonNull;
 import lombok.val;
+import repast.param.wrapper.util.LoggingUtils;
+import repast.param.wrapper.util.RuntimeParametersUtils;
 
 import java.util.List;
 import java.util.Map;
-
-import static repast.param.wrapper.util.RuntimeParametersUtils.url;
-import static repast.param.wrapper.util.RuntimeParametersUtils.useWebParameters;
 
 public class ChartsWrapper {
     private static ChartsWrapper instance;
@@ -37,14 +36,14 @@ public class ChartsWrapper {
     }
 
     public void initialise() {
-        if (useWebParameters()) {
-            Unirest.post(url() + "/charts/initialise")
+        if (RuntimeParametersUtils.useWebParameters()) {
+            Unirest.post(RuntimeParametersUtils.url() + "/charts/initialise")
                     .header("Content-Type", "application/json")
                     .asStringAsync(new Callback<String>() {
                         @Override
                         public void completed(HttpResponse<String> response) {
                             if (response.getStatus() != 200) {
-                                log("Call to POST /charts/initialise did not return 200: " + response);
+                                log("Call to POST /charts/initialise did not return 200:\n" + LoggingUtils.printResponse(response));
                             }
                         }
 
@@ -62,16 +61,16 @@ public class ChartsWrapper {
     }
 
     public void publishCharts(@NonNull final List<Map<String, String>> charts) {
-        if (useWebParameters()) {
+        if (RuntimeParametersUtils.useWebParameters()) {
             try {
-                Unirest.post(url() + "/charts")
+                Unirest.post(RuntimeParametersUtils.url() + "/charts")
                         .header("Content-Type", "application/json")
                         .body(JSON.std.asString(charts))
                         .asStringAsync(new Callback<String>() {
                             @Override
                             public void completed(HttpResponse<String> response) {
                                 if (response.getStatus() != 200) {
-                                    log("Call to POST /charts did not return 200: " + response);
+                                    log("Call to POST /charts did not return 200:\n" + LoggingUtils.printResponse(response));
                                 }
                             }
 
@@ -92,16 +91,16 @@ public class ChartsWrapper {
     }
 
     public void publishSingleChartMap(Map<String, String> chartMap) {
-        if (useWebParameters()) {
+        if (RuntimeParametersUtils.useWebParameters()) {
             try {
-                Unirest.put(url() + "/charts")
+                Unirest.put(RuntimeParametersUtils.url() + "/charts")
                         .header("Content-Type", "application/json")
                         .body(JSON.std.asString(chartMap))
                         .asStringAsync(new Callback<String>() {
                             @Override
                             public void completed(HttpResponse<String> response) {
                                 if (response.getStatus() != 200) {
-                                    log("Call to PUT /charts did not return 200: " + response);
+                                    log("Call to PUT /charts did not return 200:\n" + LoggingUtils.printResponse(response));
                                 }
                             }
 
@@ -122,6 +121,6 @@ public class ChartsWrapper {
     }
 
     private void log(@NonNull final String message) {
-        System.out.println(String.format("%s: %s", ChartsWrapper.class.getSimpleName(), message));
+        LoggingUtils.log(ChartsWrapper.class, message);
     }
 }

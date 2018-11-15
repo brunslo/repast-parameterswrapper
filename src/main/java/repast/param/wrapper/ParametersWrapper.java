@@ -7,6 +7,8 @@ import com.mashape.unirest.http.async.Callback;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.NonNull;
 import lombok.val;
+import repast.param.wrapper.util.LoggingUtils;
+import repast.param.wrapper.util.RuntimeParametersUtils;
 import repast.simphony.parameter.Parameters;
 
 import java.beans.PropertyChangeEvent;
@@ -16,8 +18,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import static repast.param.wrapper.util.RuntimeParametersUtils.*;
 
 public final class ParametersWrapper {
     private static ParametersWrapper instance;
@@ -47,18 +47,18 @@ public final class ParametersWrapper {
     public Parameters getParameters() {
         updateRuntimeParameters();
 
-        return getRuntimeParameters();
+        return RuntimeParametersUtils.getRuntimeParameters();
     }
 
     public void initialise() {
-        if (useWebParameters()) {
-            Unirest.post(url() + "/parameters/initialise")
+        if (RuntimeParametersUtils.useWebParameters()) {
+            Unirest.post(RuntimeParametersUtils.url() + "/parameters/initialise")
                     .header("Content-Type", "application/json")
                     .asStringAsync(new Callback<String>() {
                         @Override
                         public void completed(HttpResponse<String> response) {
                             if (response.getStatus() != 200) {
-                                log("Call to POST /parameters/initialise did not return 200: " + response);
+                                log("Call to POST /parameters/initialise did not return 200:\n" + LoggingUtils.printResponse(response));
                             } else {
                                 publishWebParameters();
                             }
@@ -78,21 +78,21 @@ public final class ParametersWrapper {
     }
 
     private void publishWebParameters() {
-        if (useWebParameters()) {
-            val parameters = getRuntimeParameters();
+        if (RuntimeParametersUtils.useWebParameters()) {
+            val parameters = RuntimeParametersUtils.getRuntimeParameters();
 
             try {
                 val parametersMap = StreamSupport.stream(parameters.getSchema().parameterNames().spliterator(), false)
                         .collect(Collectors.toMap(Function.identity(), parameters::getValueAsString));
 
-                Unirest.post(url() + "/parameters")
+                Unirest.post(RuntimeParametersUtils.url() + "/parameters")
                         .header("Content-Type", "application/json")
                         .body(JSON.std.asString(parametersMap))
                         .asStringAsync(new Callback<String>() {
                             @Override
                             public void completed(HttpResponse<String> response) {
                                 if (response.getStatus() != 200) {
-                                    log("Call to POST /parameters did not return 200: " + response);
+                                    log("Call to POST /parameters did not return 200:\n" + LoggingUtils.printResponse(response));
                                 }
                             }
 
@@ -113,22 +113,22 @@ public final class ParametersWrapper {
     }
 
     private void registerRuntimeParametersChangeListener() {
-        if (useWebParameters()) {
-            val parameters = getRuntimeParameters();
+        if (RuntimeParametersUtils.useWebParameters()) {
+            val parameters = RuntimeParametersUtils.getRuntimeParameters();
 
             parameters.addPropertyChangeListener(this::processPropertyChangeEvent);
         }
     }
 
     private void updateRuntimeParameters() {
-        if (useWebParameters()) {
-            val nextPollingDue = lastPollingDone.plus(Duration.ofMillis(pollingInterval()));
+        if (RuntimeParametersUtils.useWebParameters()) {
+            val nextPollingDue = lastPollingDone.plus(Duration.ofMillis(RuntimeParametersUtils.pollingInterval()));
 
             if (LocalDateTime.now().isAfter(nextPollingDue)) {
                 try {
-                    val parameters = getRuntimeParameters();
+                    val parameters = RuntimeParametersUtils.getRuntimeParameters();
 
-                    Unirest.get(url() + "/parameters")
+                    Unirest.get(RuntimeParametersUtils.url() + "/parameters")
                             .asStringAsync(new Callback<String>() {
                                 @Override
                                 public void completed(HttpResponse<String> response) {
@@ -145,7 +145,7 @@ public final class ParametersWrapper {
                                             log("Error parsing GET /parameters response: " + ex.getLocalizedMessage());
                                         }
                                     } else {
-                                        log("Call to GET /parameters did not return 200: " + response);
+                                        log("Call to GET /parameters did not return 200:\n" + LoggingUtils.printResponse(response));
                                     }
                                 }
 
@@ -169,8 +169,8 @@ public final class ParametersWrapper {
     }
 
     private void processPropertyChangeEvent(@NonNull final PropertyChangeEvent event) {
-        if (useWebParameters()) {
-            val parameters = getRuntimeParameters();
+        if (RuntimeParametersUtils.useWebParameters()) {
+            val parameters = RuntimeParametersUtils.getRuntimeParameters();
 
             val parameterExists = parameters.getSchema().contains(event.getPropertyName());
             val valueWasUpdated = !event.getNewValue().equals(event.getOldValue());
@@ -179,7 +179,7 @@ public final class ParametersWrapper {
                 val name = event.getPropertyName();
                 val value = parameters.getValueAsString(event.getPropertyName());
 
-                Unirest.put(url() + "/parameters")
+                Unirest.put(RuntimeParametersUtils.url() + "/parameters")
                         .header("Content-Type", "application/x-www-form-urlencoded")
                         .field("name", name)
                         .field("value", value)
@@ -188,8 +188,8 @@ public final class ParametersWrapper {
                             public void completed(HttpResponse<String> response) {
                                 if (response.getStatus() != 200) {
                                     log(String.format(
-                                            "Call to PUT /parameters with name='%s' and value='%s' did not return 200: %s",
-                                            name, value, response
+                                            "Call to PUT /parameters with name='%s' and value='%s' did not return 200:\n%s",
+                                            name, value, LoggingUtils.printResponse(response)
                                     ));
                                 }
                             }
@@ -209,6 +209,6 @@ public final class ParametersWrapper {
     }
 
     private void log(@NonNull final String message) {
-        System.out.println(String.format("%s: %s", ParametersWrapper.class.getSimpleName(), message));
+        LoggingUtils.log(ParametersWrapper.class, message);
     }
 }
