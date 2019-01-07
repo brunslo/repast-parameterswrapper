@@ -1,5 +1,7 @@
-package repast.param.wrapper;
+package au.edu.unimelb.eresearch.repast.parameterswrapper;
 
+import au.edu.unimelb.eresearch.repast.parameterswrapper.util.LoggingUtils;
+import au.edu.unimelb.eresearch.repast.parameterswrapper.util.RuntimeParametersUtils;
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
@@ -7,8 +9,6 @@ import com.mashape.unirest.http.async.Callback;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.NonNull;
 import lombok.val;
-import repast.param.wrapper.util.LoggingUtils;
-import repast.param.wrapper.util.RuntimeParametersUtils;
 import repast.simphony.parameter.Parameters;
 
 import java.beans.PropertyChangeEvent;

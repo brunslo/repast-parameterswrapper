@@ -1,4 +1,4 @@
-package repast.param.wrapper.util;
+package au.edu.unimelb.eresearch.repast.parameterswrapper.util;
 
 import com.mashape.unirest.http.HttpResponse;
 import lombok.NonNull;
